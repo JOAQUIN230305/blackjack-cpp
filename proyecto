@@ -1,0 +1,127 @@
+#include <iostream>
+#include <random>
+#include <string>
+#include <vector>
+#include <algorithm>  // Para std::find y std::shuffle
+#include <ctime>      // Para usar el tiempo como semilla
+using namespace std;
+
+struct Card {
+    string suit;
+    int value;
+    string face;  // Para J, Q, K y As
+};
+
+int player = 0;
+int dealer = 0;
+string playerMessage = "Las cartas del jugador son: ";
+string dealerMessage = "Las cartas del dealer son: ";
+Card deck[52];
+vector<int> usedCards;  // Para almacenar las cartas que ya fueron usadas
+
+// Inicializamos el generador de números aleatorios al inicio del programa
+mt19937 gen(static_cast<unsigned int>(time(0)));  // Generador de números aleatorios
+uniform_int_distribution<int> dist(0, 51);        // Distribución para valores entre 0 y 51
+
+// Prototipos de las funciones
+void validateGame(int playerScore, int dealerScore);
+void initGame();
+void shuffleDeck();
+
+// Función para crear el mazo de cartas
+void createDeck() {
+    string suits[] = {"Corazones", "Diamantes", "Tréboles", "Picas"};
+    int cardCount = 0;
+
+    for (int suit = 0; suit < 4; suit++) {
+        for (int card = 2; card <= 14; card++) {
+            deck[cardCount].suit = suits[suit];
+            if (card >= 11 && card <= 13) {
+                deck[cardCount].value = 10;  // J, Q, K valen 10
+                if (card == 11) deck[cardCount].face = "J";
+                else if (card == 12) deck[cardCount].face = "Q";
+                else if (card == 13) deck[cardCount].face = "K";
+            } else if (card == 14) {
+                deck[cardCount].value = 11;  // El As vale 11
+                deck[cardCount].face = "As";
+            } else {
+                deck[cardCount].value = card;  // Las demás cartas mantienen su valor
+                deck[cardCount].face = to_string(card);  // El número de la carta como string
+            }
+            cardCount++;
+        }
+    }
+}
+
+// Función para barajar el mazo
+void shuffleDeck() {
+    shuffle(begin(deck), end(deck), gen);  // Baraja las cartas usando std::shuffle
+}
+
+// Función para robar una carta sin repetirse
+Card drawCard() {
+    int cardIndex;
+    do {
+        cardIndex = dist(gen);
+    } while (find(usedCards.begin(), usedCards.end(), cardIndex) != usedCards.end());  // Verificamos que no se repita
+
+    usedCards.push_back(cardIndex);  // Añadimos la carta a la lista de usadas
+    return deck[cardIndex];
+}
+
+// Función para inicializar el juego
+void initGame() {
+    int playerScore = 0;
+    int dealerScore = 0;
+
+    // El jugador roba dos cartas
+    cout << playerMessage << endl;
+    for (int i = 0; i < 2; i++) {
+        Card card = drawCard();
+        cout << "Carta " << i + 1 << ": " << card.face << " de " << card.suit << " (valor: " << card.value << ")" << endl;
+        playerScore += card.value;
+    }
+    cout << "Puntuación del jugador: " << playerScore << endl;
+
+    // El dealer roba dos cartas
+    cout << dealerMessage << endl;
+    for (int i = 0; i < 2; i++) {
+        Card card = drawCard();
+        cout << "Carta " << i + 1 << ": " << card.face << " de " << card.suit << " (valor: " << card.value << ")" << endl;
+        dealerScore += card.value;
+    }
+    cout << "Puntuación del dealer: " << dealerScore << endl;
+
+    // Validamos el resultado
+    validateGame(playerScore, dealerScore);
+}
+
+// Función para validar el resultado del juego
+void validateGame(int playerScore, int dealerScore) {
+    if (playerScore > 21) {
+        cout << "Perdiste. Te pasaste de 21." << endl;
+    } else if (dealerScore > 21) {
+        cout << "¡Ganaste! El dealer se pasó de 21." << endl;
+    } else if (playerScore == 21) {
+        cout << "¡Ganaste! Tienes 21 puntos." << endl;
+    } else if (playerScore > dealerScore) {
+        cout << "¡Ganaste! Tienes más puntos que el dealer." << endl;
+    } else if (playerScore == dealerScore) {
+        cout << "Empate. Ambos tienen " << playerScore << " puntos." << endl;
+    } else {
+        cout << "Perdiste. El dealer tiene más puntos." << endl;
+    }
+}
+
+int main() {
+    // Crea el mazo de cartas
+    createDeck();
+
+    // Baraja el mazo
+    shuffleDeck();
+
+    // Inicia el juego repartiendo cartas
+    initGame();
+
+    return 0;
+}
